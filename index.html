@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AutoCut Studio — 영상 자동 하이라이트/점프컷 (가벼운 웹)</title>
+
+    <!-- SEO / OG -->
+    <meta
+      name="description"
+      content="영상 업로드만 하면 침묵 구간을 감지해 하이라이트 타임라인을 자동 생성합니다. 쇼츠용 구간 추천 + 타임스탬프 내보내기."
+    />
+    <meta
+      name="keywords"
+      content="영상 자동 편집, 침묵 제거, 점프컷, 하이라이트 추출, 쇼츠 생성, 타임스탬프, AutoCut"
+    />
+    <meta name="author" content="FunnyFunny" />
+    <link rel="canonical" href="https://funnyfunny.cloud/" />
+
+    <meta
+      property="og:title"
+      content="AutoCut Studio — 영상 자동 하이라이트/점프컷"
+    />
+    <meta
+      property="og:description"
+      content="업로드 → 침묵 감지 → 하이라이트 타임라인 자동 생성. 결과 타임스탬프를 바로 복사/내보내기."
+    />
+    <!-- OG image: user preference -->
+    <meta
+      property="og:image"
+      content="https://dummyimage.com/1200x630/0b1220/ffffff&text=AutoCut+Studio"
+    />
+    <meta property="og:image:alt" content="AutoCut Studio" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%3E%3Ctext%20y='0.9em'%20font-size='90'%3E%F0%9F%8E%AC%3C/text%3E%3C/svg%3E"
+    />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap");
+      html,
+      body {
+        font-family: Pretendard, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      }
+      .glass {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(10px);
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+    </style>
+  </head>
+
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="absolute inset-0 -z-10">
+      <div
+        class="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-3xl opacity-30"
+        style="
+          background: radial-gradient(
+              circle at 30% 30%,
+              #22c55e,
+              transparent 55%
+            ),
+            radial-gradient(circle at 70% 70%, #38bdf8, transparent 55%),
+            radial-gradient(circle at 40% 80%, #a78bfa, transparent 55%);
+        "
+      ></div>
+    </div>
+
+    <!-- Top bar -->
+    <header class="max-w-6xl mx-auto px-4 pt-6">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-white/10 border border-white/10 grid place-items-center"
+          >
+            🎬
+          </div>
+          <div>
+            <div class="text-lg font-bold leading-tight">AutoCut Studio</div>
+            <div class="text-xs text-slate-300">
+              업로드 → 침묵 감지 → 하이라이트 타임라인 자동 생성 (완전 가벼움)
+            </div>
+          </div>
+        </div>
+
+        <!-- 다른 서비스 보기 (기본 포함) -->
+        <a
+          href="https://funnyfunny.cloud/"
+          target="_blank"
+          rel="noopener"
+          class="shrink-0 inline-flex items-center gap-2 rounded-2xl px-4 py-2 glass hover:bg-white/10 transition"
+        >
+          <span class="text-sm font-semibold">다른 서비스 보기</span>
+          <span class="opacity-80">↗</span>
+        </a>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 pb-16">
+      <!-- Upload -->
+      <section class="mt-6 glass rounded-3xl p-6">
+        <div class="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <div class="text-sm text-emerald-200 font-semibold">
+              Step 1. 영상 올리기
+            </div>
+            <h2 class="text-xl font-bold">파일 드래그 or 선택 후 스캔</h2>
+          </div>
+          <span
+            id="statusBadge"
+            class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 text-slate-200"
+          >
+            대기중
+          </span>
+        </div>
+
+        <div class="mt-4 flex flex-col gap-4 lg:flex-row">
+          <div class="lg:w-5/12 space-y-3">
+            <div
+              id="dropZone"
+              class="rounded-2xl border border-dashed border-white/15 bg-white/5 hover:bg-white/10 transition p-4 cursor-pointer"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="text-sm font-semibold">
+                    파일을 드래그하거나 선택하세요
+                  </div>
+                  <div class="text-xs text-slate-400">
+                    mp4, webm 등 영상 파일을 올려주세요. (브라우저 내 처리)
+                  </div>
+                </div>
+                <button
+                  id="fileSelectBtn"
+                  type="button"
+                  class="px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm font-semibold shrink-0"
+                >
+                  파일 선택
+                </button>
+              </div>
+              <input
+                id="fileInput"
+                type="file"
+                accept="video/*"
+                class="sr-only"
+              />
+            </div>
+            <div id="fileMeta" class="text-xs text-slate-400">
+              아직 선택된 파일이 없어요.
+            </div>
+
+            <div class="flex flex-wrap gap-2">
+              <button
+                id="scanBtn"
+                class="px-4 py-3 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 hover:bg-emerald-500/25 transition font-semibold"
+              >
+                🔍 스캔 시작
+              </button>
+              <button
+                id="stopBtn"
+                disabled
+                class="px-4 py-3 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold disabled:opacity-40"
+              >
+                ⛔ 중지
+              </button>
+              <button
+                id="demoBtn"
+                class="px-4 py-3 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold"
+              >
+                🎲 데모 구간 생성
+              </button>
+            </div>
+
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div
+                class="h-2 w-full rounded-full bg-white/10 overflow-hidden border border-white/10"
+              >
+                <div id="progressBar" class="h-full w-0 bg-white/40"></div>
+              </div>
+              <div
+                class="mt-2 flex items-center justify-between text-xs text-slate-400"
+              >
+                <span id="progressText">0%</span>
+                <span id="timeText">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:flex-1 grid grid-cols-2 gap-3">
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div class="text-sm font-semibold">스캔 속도</div>
+              <div class="mt-2 flex gap-2">
+                <button
+                  class="speedBtn px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm"
+                  data-speed="2"
+                >
+                  2x
+                </button>
+                <button
+                  class="speedBtn px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm"
+                  data-speed="4"
+                >
+                  4x
+                </button>
+                <button
+                  class="speedBtn px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm"
+                  data-speed="8"
+                >
+                  8x
+                </button>
+              </div>
+              <div class="mt-2 text-xs text-slate-400">
+                빠를수록 덜 정확하지만 더 빨라요.
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div class="text-sm font-semibold">침묵 기준</div>
+              <div class="mt-2 flex items-center gap-2">
+                <input
+                  id="threshold"
+                  type="range"
+                  min="0.005"
+                  max="0.08"
+                  step="0.001"
+                  value="0.02"
+                  class="w-full"
+                />
+                <span
+                  id="thresholdVal"
+                  class="mono text-xs text-slate-200 w-16 text-right"
+                  >0.020</span
+                >
+              </div>
+              <div class="mt-2 text-xs text-slate-400">
+                낮추면 “말이 조금만 있어도” 하이라이트로 잡혀요.
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div class="text-sm font-semibold">최소 구간(초)</div>
+              <div class="mt-2 flex items-center gap-2">
+                <input
+                  id="minSeg"
+                  type="number"
+                  min="1"
+                  max="60"
+                  value="3"
+                  class="w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div class="mt-2 text-xs text-slate-400">
+                너무 짧은 구간은 합쳐지거나 제거돼요.
+              </div>
+            </div>
+
+            <div class="rounded-2xl bg-white/5 border border-white/10 p-4">
+              <div class="text-sm font-semibold">패딩(초)</div>
+              <div class="mt-2 flex items-center gap-2">
+                <input
+                  id="pad"
+                  type="number"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value="0.25"
+                  class="w-full rounded-xl bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none"
+                />
+              </div>
+              <div class="mt-2 text-xs text-slate-400">
+                구간 앞뒤로 여유를 줘서 자연스럽게.
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden video (for scan) -->
+          <video id="video" class="hidden" playsinline></video>
+        </div>
+      </section>
+
+      <!-- Hero -->
+      <section class="mt-4">
+        <div class="glass rounded-3xl p-6">
+          <h1 class="text-2xl md:text-3xl font-extrabold tracking-tight">
+            영상 자동 점프컷/하이라이트 추천
+          </h1>
+          <p class="mt-2 text-slate-300">
+            이 페이지는
+            <span class="font-semibold text-slate-100">브라우저 안에서</span>
+            “침묵 구간”을 스캔해 하이라이트 타임스탬프를 뽑아줘요. (서버 업로드
+            없이도 동작)
+          </p>
+
+          <div class="mt-4 text-xs text-slate-300 leading-relaxed space-y-1">
+            <div>✅ 쇼츠용 구간 추천</div>
+            <div>✅ 구간 리스트 플레이</div>
+            <div>✅ 타임스탬프/EDL 내보내기</div>
+          </div>
+
+          <div class="mt-5 rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div class="text-sm font-semibold">빠른 사용법</div>
+            <ol class="mt-2 text-sm text-slate-300 list-decimal ml-5 space-y-1">
+              <li>영상 파일 업로드</li>
+              <li>“스캔 시작” → 숨겨진 재생으로 음량을 측정</li>
+              <li>하이라이트 구간 리스트에서 바로 재생 / 복사</li>
+            </ol>
+            <div class="mt-3 text-xs text-slate-400">
+              ※ mp4 오디오 디코딩은 브라우저/코덱에 따라 제한될 수 있어요. 그
+              경우 webm로도 시험해보세요.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Player + Results -->
+      <section class="mt-4 grid lg:grid-cols-2 gap-4">
+        <div class="glass rounded-3xl p-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold">미리보기 플레이어</h2>
+            <div class="text-xs text-slate-400">구간 클릭하면 자동 이동</div>
+          </div>
+
+          <div
+            class="mt-4 rounded-2xl overflow-hidden border border-white/10 bg-black"
+          >
+            <video
+              id="player"
+              controls
+              playsinline
+              class="w-full aspect-video bg-black"
+            ></video>
+          </div>
+
+          <div class="mt-4 flex flex-wrap gap-2">
+            <button
+              id="playAllBtn"
+              disabled
+              class="px-4 py-2 rounded-2xl bg-sky-500/20 border border-sky-400/30 hover:bg-sky-500/25 transition font-semibold disabled:opacity-40"
+            >
+              ▶️ 구간 이어보기
+            </button>
+            <button
+              id="shuffleBtn"
+              disabled
+              class="px-4 py-2 rounded-2xl bg-violet-500/20 border border-violet-400/30 hover:bg-violet-500/25 transition font-semibold disabled:opacity-40"
+            >
+              🔀 랜덤 순서
+            </button>
+            <button
+              id="copyBtn"
+              disabled
+              class="px-4 py-2 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold disabled:opacity-40"
+            >
+              📋 타임스탬프 복사
+            </button>
+            <button
+              id="exportBtn"
+              disabled
+              class="px-4 py-2 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold disabled:opacity-40"
+            >
+              ⬇️ EDL 내보내기
+            </button>
+          </div>
+
+          <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div class="text-sm font-semibold">팁</div>
+            <div class="mt-2 text-sm text-slate-300 leading-relaxed">
+              “침묵 제거”는 쇼츠/토크 영상에 특히 좋아요.
+              <span class="font-semibold text-slate-100">복사한 타임스탬프</span
+              >는 CapCut/프리미어/다빈치에서도 바로 참고해서 컷 편집할 수
+              있어요.
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-3xl p-6">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold">하이라이트 구간</h2>
+            <span
+              id="segCount"
+              class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 text-slate-200"
+              >0개</span
+            >
+          </div>
+
+          <div
+            id="segments"
+            class="mt-4 space-y-2 max-h-[420px] overflow-auto no-scrollbar pr-1"
+          >
+            <div
+              class="rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-slate-300"
+            >
+              아직 구간이 없어요. 업로드 후
+              <span class="font-semibold text-slate-100">스캔</span>을
+              눌러보세요.
+            </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+            <div class="text-sm font-semibold">“요약/번역/더빙”은?</div>
+            <div class="mt-2 text-sm text-slate-300 leading-relaxed">
+              브라우저만으로 침묵 구간을 찾는 MVP예요. AI 요약/번역/더빙은 서버
+              연동 후 제공 예정이고, 지금은 아래에
+              <span class="font-semibold text-slate-100">자막 텍스트</span>를
+              붙여넣으면 간단한 요약/제목/해시태그를 오프라인 규칙으로 만들어줘요.
+            </div>
+
+            <div class="mt-3">
+              <label class="block text-sm text-slate-300 mb-2"
+                >대본/자막 텍스트(선택)</label
+              >
+              <textarea
+                id="transcript"
+                rows="5"
+                class="w-full rounded-2xl bg-white/10 border border-white/10 px-3 py-3 text-sm outline-none"
+                placeholder="여기에 대본/자막 텍스트를 붙여넣으면, 간단 요약/제목/해시태그를 자동 생성해요."
+              ></textarea>
+
+              <div class="mt-3 flex flex-wrap gap-2">
+                <button
+                  id="summarizeBtn"
+                  class="px-4 py-2 rounded-2xl bg-amber-500/20 border border-amber-400/30 hover:bg-amber-500/25 transition font-semibold"
+                >
+                  ✨ 요약/제목 생성
+                </button>
+                <button
+                  id="clearTextBtn"
+                  class="px-4 py-2 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold"
+                >
+                  🧽 텍스트 지우기
+                </button>
+              </div>
+
+              <div
+                id="summaryBox"
+                class="mt-3 hidden rounded-2xl bg-black/30 border border-white/10 p-4"
+              >
+                <div class="text-sm font-semibold">자동 생성 결과</div>
+                <div class="mt-2 text-sm text-slate-200">
+                  <div class="text-slate-300 text-xs mb-1">제목 후보</div>
+                  <div id="titleOut" class="font-semibold"></div>
+                </div>
+                <div class="mt-3 text-sm text-slate-200">
+                  <div class="text-slate-300 text-xs mb-1">요약</div>
+                  <div id="summaryOut" class="text-slate-200"></div>
+                </div>
+                <div class="mt-3 text-sm text-slate-200">
+                  <div class="text-slate-300 text-xs mb-1">해시태그</div>
+                  <div id="tagsOut" class="mono text-slate-200"></div>
+                </div>
+                <div class="mt-3 flex gap-2">
+                  <button
+                    id="copySummaryBtn"
+                    class="px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm font-semibold"
+                  >
+                    📋 복사
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer -->
+      <footer class="mt-8 text-center text-xs text-slate-400">
+        <div class="opacity-90">
+          © AutoCut Studio (MVP). 브라우저에서만 동작하도록 가볍게 구성.
+        </div>
+        <div class="mt-1 opacity-70">
+          다음 단계: 서버 FFmpeg + STT(자막) + 번역/더빙 파이프라인
+        </div>
+      </footer>
+    </main>
+
+    <script>
+      (() => {
+        const $ = (id) => document.getElementById(id);
+
+        const fileInput = $("fileInput");
+        const fileSelectBtn = $("fileSelectBtn");
+        const dropZone = $("dropZone");
+        const fileMeta = $("fileMeta");
+        const video = $("video");
+        const player = $("player");
+
+        const scanBtn = $("scanBtn");
+        const stopBtn = $("stopBtn");
+        const demoBtn = $("demoBtn");
+
+        const progressBar = $("progressBar");
+        const progressText = $("progressText");
+        const timeText = $("timeText");
+        const statusBadge = $("statusBadge");
+
+        const threshold = $("threshold");
+        const thresholdVal = $("thresholdVal");
+        const minSeg = $("minSeg");
+        const pad = $("pad");
+
+        const segmentsEl = $("segments");
+        const segCount = $("segCount");
+
+        const playAllBtn = $("playAllBtn");
+        const shuffleBtn = $("shuffleBtn");
+        const copyBtn = $("copyBtn");
+        const exportBtn = $("exportBtn");
+
+        const transcriptEl = $("transcript");
+        const summarizeBtn = $("summarizeBtn");
+        const clearTextBtn = $("clearTextBtn");
+        const summaryBox = $("summaryBox");
+        const titleOut = $("titleOut");
+        const summaryOut = $("summaryOut");
+        const tagsOut = $("tagsOut");
+        const copySummaryBtn = $("copySummaryBtn");
+
+        let scanSpeed = 4;
+        let stopFlag = false;
+        let segments = [];
+        let objectUrl = null;
+
+        function setStatus(text, tone = "neutral") {
+          statusBadge.textContent = text;
+          statusBadge.className = "text-xs px-3 py-1 rounded-full border";
+          if (tone === "ok")
+            statusBadge.classList.add(
+              "bg-emerald-500/20",
+              "border-emerald-400/30",
+              "text-emerald-100"
+            );
+          else if (tone === "warn")
+            statusBadge.classList.add(
+              "bg-amber-500/20",
+              "border-amber-400/30",
+              "text-amber-100"
+            );
+          else if (tone === "bad")
+            statusBadge.classList.add(
+              "bg-rose-500/20",
+              "border-rose-400/30",
+              "text-rose-100"
+            );
+          else
+            statusBadge.classList.add(
+              "bg-white/10",
+              "border-white/10",
+              "text-slate-200"
+            );
+        }
+
+        function fmtTime(s) {
+          s = Math.max(0, s);
+          const hh = Math.floor(s / 3600);
+          const mm = Math.floor((s % 3600) / 60);
+          const ss = Math.floor(s % 60);
+          const ms = Math.floor((s - Math.floor(s)) * 1000);
+          const pad2 = (n) => String(n).padStart(2, "0");
+          if (hh > 0) return `${hh}:${pad2(mm)}:${pad2(ss)}`;
+          return `${mm}:${pad2(ss)}.${String(ms).padStart(3, "0")}`;
+        }
+
+        function clamp(v, a, b) {
+          return Math.min(b, Math.max(a, v));
+        }
+
+        function resetUI() {
+          progressBar.style.width = "0%";
+          progressText.textContent = "0%";
+          timeText.textContent = "—";
+          stopBtn.disabled = true;
+          scanBtn.disabled = false;
+          playAllBtn.disabled = true;
+          shuffleBtn.disabled = true;
+          copyBtn.disabled = true;
+          exportBtn.disabled = true;
+        }
+
+        function handleFile(file) {
+          if (!file) return;
+          if (file.type && !file.type.startsWith("video/")) {
+            setStatus("영상 파일만 올려줘", "warn");
+            return;
+          }
+
+          if (objectUrl) URL.revokeObjectURL(objectUrl);
+          objectUrl = URL.createObjectURL(file);
+
+          video.src = objectUrl;
+          player.src = objectUrl;
+
+          segments = [];
+          renderSegments();
+          resetUI();
+          setStatus("영상 로드됨", "ok");
+
+          fileMeta.textContent = `${file.name} · ${(
+            file.size /
+            1024 /
+            1024
+          ).toFixed(2)}MB`;
+        }
+
+        function renderSegments() {
+          segCount.textContent = `${segments.length}개`;
+          if (!segments.length) {
+            segmentsEl.innerHTML = `
+        <div class="rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-slate-300">
+          아직 구간이 없어요. 업로드 후 <span class="font-semibold text-slate-100">스캔</span>을 눌러보세요.
+        </div>`;
+            playAllBtn.disabled = true;
+            shuffleBtn.disabled = true;
+            copyBtn.disabled = true;
+            exportBtn.disabled = true;
+            return;
+          }
+
+          playAllBtn.disabled = false;
+          shuffleBtn.disabled = false;
+          copyBtn.disabled = false;
+          exportBtn.disabled = false;
+
+          segmentsEl.innerHTML = segments
+            .map((seg, idx) => {
+              const dur = seg.end - seg.start;
+              const label = seg.label || `Highlight ${idx + 1}`;
+              return `
+      <div class="rounded-2xl bg-white/5 border border-white/10 p-4 hover:bg-white/7 transition">
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold">${label}</div>
+            <div class="mt-1 text-xs text-slate-400 mono">
+              ${fmtTime(seg.start)} → ${fmtTime(
+                seg.end
+              )} <span class="text-slate-500">(${dur.toFixed(2)}s)</span>
+            </div>
+            <div class="mt-2 text-xs text-slate-300">${
+              seg.note || "침묵이 적고 에너지가 높은 구간으로 추정"
+            }</div>
+          </div>
+          <div class="shrink-0 flex flex-col gap-2">
+            <button data-i="${idx}" class="seekBtn px-3 py-2 rounded-xl bg-sky-500/20 border border-sky-400/30 hover:bg-sky-500/25 text-sm font-semibold">재생</button>
+            <button data-i="${idx}" class="copyOneBtn px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm font-semibold">복사</button>
+          </div>
+        </div>
+      </div>`;
+            })
+            .join("");
+
+          document.querySelectorAll(".seekBtn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+              const i = Number(btn.dataset.i);
+              const seg = segments[i];
+              player.currentTime = seg.start;
+              player.play().catch(() => {});
+              // auto stop at end
+              const onTime = () => {
+                if (player.currentTime >= seg.end - 0.05) {
+                  player.pause();
+                  player.removeEventListener("timeupdate", onTime);
+                }
+              };
+              player.addEventListener("timeupdate", onTime);
+            });
+          });
+
+          document.querySelectorAll(".copyOneBtn").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+              const i = Number(btn.dataset.i);
+              const seg = segments[i];
+              const line = `${i + 1}. ${fmtTime(seg.start)} - ${fmtTime(
+                seg.end
+              )} (${(seg.end - seg.start).toFixed(2)}s)`;
+              await navigator.clipboard.writeText(line);
+              setStatus("구간 복사됨", "ok");
+              setTimeout(() => setStatus("준비됨", "neutral"), 900);
+            });
+          });
+        }
+
+        // Speed buttons
+        document.querySelectorAll(".speedBtn").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            scanSpeed = Number(btn.dataset.speed);
+            document
+              .querySelectorAll(".speedBtn")
+              .forEach((b) => b.classList.remove("ring-2", "ring-white/40"));
+            btn.classList.add("ring-2", "ring-white/40");
+            setStatus(`스캔 속도 ${scanSpeed}x`, "neutral");
+          });
+        });
+        // default highlight speed 4x
+        document
+          .querySelector('.speedBtn[data-speed="4"]')
+          .classList.add("ring-2", "ring-white/40");
+
+        threshold.addEventListener(
+          "input",
+          () => (thresholdVal.textContent = Number(threshold.value).toFixed(3))
+        );
+
+        fileInput.addEventListener("change", () => {
+          handleFile(fileInput.files?.[0]);
+        });
+
+        const dropClasses = [
+          "ring-2",
+          "ring-emerald-400/50",
+          "border-emerald-400/60",
+          "bg-emerald-500/10",
+        ];
+
+        function setDropActive(active) {
+          if (!dropZone) return;
+          dropClasses.forEach((cls) =>
+            dropZone.classList[active ? "add" : "remove"](cls)
+          );
+        }
+
+        ["dragenter", "dragover"].forEach((ev) => {
+          dropZone?.addEventListener(ev, (e) => {
+            e.preventDefault();
+            setDropActive(true);
+          });
+        });
+        ["dragleave", "drop"].forEach((ev) => {
+          dropZone?.addEventListener(ev, (e) => {
+            e.preventDefault();
+            setDropActive(false);
+          });
+        });
+        dropZone?.addEventListener("drop", (e) => {
+          const file = e.dataTransfer?.files?.[0];
+          handleFile(file);
+        });
+        dropZone?.addEventListener("click", () => fileInput?.click());
+        fileSelectBtn?.addEventListener("click", () => fileInput?.click());
+
+        function getEnergyFromAnalyser(analyser) {
+          const buf = new Uint8Array(analyser.fftSize);
+          analyser.getByteTimeDomainData(buf);
+          // RMS on normalized [-1,1]
+          let sum = 0;
+          for (let i = 0; i < buf.length; i++) {
+            const v = (buf[i] - 128) / 128;
+            sum += v * v;
+          }
+          return Math.sqrt(sum / buf.length);
+        }
+
+        function mergeSegments(raw, minLen) {
+          if (!raw.length) return [];
+          const out = [raw[0]];
+          for (let i = 1; i < raw.length; i++) {
+            const prev = out[out.length - 1];
+            const cur = raw[i];
+            // merge if gap is tiny
+            if (cur.start <= prev.end + 0.15)
+              prev.end = Math.max(prev.end, cur.end);
+            else out.push(cur);
+          }
+          return out.filter((s) => s.end - s.start >= minLen);
+        }
+
+        function padSegments(segs, duration, p) {
+          return segs.map((s, idx) => {
+            const start = clamp(s.start - p, 0, duration);
+            const end = clamp(s.end + p, 0, duration);
+            return { ...s, start, end, label: `Highlight ${idx + 1}` };
+          });
+        }
+
+        async function scanSilence() {
+          const f = fileInput.files?.[0];
+          if (!f) {
+            setStatus("영상 파일을 먼저 선택해줘", "warn");
+            return;
+          }
+
+          stopFlag = false;
+          segments = [];
+          renderSegments();
+
+          scanBtn.disabled = true;
+          stopBtn.disabled = false;
+          setStatus("스캔 중…", "neutral");
+
+          // Ensure metadata loaded
+          await new Promise((res, rej) => {
+            const onLoaded = () => {
+              video.removeEventListener("loadedmetadata", onLoaded);
+              res();
+            };
+            const onErr = () => {
+              rej(new Error("metadata load failed"));
+            };
+            video.addEventListener("loadedmetadata", onLoaded);
+            video.addEventListener("error", onErr, { once: true });
+            // in case already loaded
+            if (!Number.isNaN(video.duration) && video.duration > 0) res();
+          }).catch(() => {
+            setStatus("영상 메타데이터를 읽지 못했어", "bad");
+            resetUI();
+            return;
+          });
+
+          const duration = video.duration;
+          if (!isFinite(duration) || duration <= 0) {
+            setStatus("영상 길이를 확인할 수 없어", "bad");
+            resetUI();
+            return;
+          }
+
+          // WebAudio analyser
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          const ctx = new AudioCtx();
+          const source = ctx.createMediaElementSource(video);
+          const analyser = ctx.createAnalyser();
+          analyser.fftSize = 2048;
+          source.connect(analyser);
+          analyser.connect(ctx.destination);
+
+          // Scan settings
+          const thr = Number(threshold.value);
+          const minLen = Number(minSeg.value);
+          const padSec = Number(pad.value);
+
+          const step = 0.12; // sampling interval (sec) during scan
+          const effectiveStep = step * scanSpeed; // because playback faster
+          const totalSteps = Math.ceil(duration / effectiveStep);
+
+          // We'll play muted to avoid sound.
+          video.muted = true;
+          video.playbackRate = scanSpeed;
+          video.currentTime = 0;
+
+          // Build active (non-silent) ranges
+          let active = false;
+          let curStart = 0;
+          const raw = [];
+
+          // Start playback
+          await video.play().catch(() => {
+            /* autoplay might fail until user interaction; but scan is user click so ok */
+          });
+
+          let i = 0;
+          let lastTick = performance.now();
+
+          // use a timer loop
+          while (!stopFlag && video.currentTime < duration - 0.05) {
+            // throttle sampling with requestAnimationFrame-ish
+            await new Promise((r) => setTimeout(r, 80));
+            const now = performance.now();
+            if (now - lastTick < 80) continue;
+            lastTick = now;
+
+            const t = video.currentTime;
+            const e = getEnergyFromAnalyser(analyser);
+
+            if (e >= thr) {
+              if (!active) {
+                active = true;
+                curStart = t;
+              }
+            } else {
+              if (active) {
+                active = false;
+                raw.push({ start: curStart, end: t });
+              }
+            }
+
+            i++;
+            const pct = clamp((t / duration) * 100, 0, 100);
+            progressBar.style.width = `${pct.toFixed(1)}%`;
+            progressText.textContent = `${pct.toFixed(0)}%`;
+            timeText.textContent = `${fmtTime(t)} / ${fmtTime(duration)}`;
+          }
+
+          // finalize
+          video.pause();
+          if (active)
+            raw.push({
+              start: curStart,
+              end: Math.min(video.currentTime, duration),
+            });
+
+          // cleanup audio graph
+          try {
+            source.disconnect();
+            analyser.disconnect();
+          } catch {}
+          try {
+            await ctx.close();
+          } catch {}
+
+          if (stopFlag) {
+            setStatus("중지됨", "warn");
+            resetUI();
+            return;
+          }
+
+          // Merge, filter, pad
+          let out = mergeSegments(raw, minLen);
+          out = padSegments(out, duration, padSec);
+
+          // If too many tiny segments, keep top N by duration
+          out.sort((a, b) => b.end - b.start - (a.end - a.start));
+          if (out.length > 18) out = out.slice(0, 18);
+          // Sort back by time
+          out.sort((a, b) => a.start - b.start);
+
+          // Add some notes based on "energy" heuristic
+          out = out.map((s, idx) => ({
+            ...s,
+            note:
+              s.end - s.start >= 10
+                ? "길고 밀도 높은 구간"
+                : "짧고 임팩트 구간",
+            label: `Highlight ${idx + 1}`,
+          }));
+
+          segments = out;
+          renderSegments();
+
+          progressBar.style.width = "100%";
+          progressText.textContent = "100%";
+          timeText.textContent = `${fmtTime(duration)} / ${fmtTime(duration)}`;
+          setStatus(
+            segments.length
+              ? "완료! 하이라이트 생성됨"
+              : "하이라이트를 못 찾았어 (기준 조정해봐)",
+            segments.length ? "ok" : "warn"
+          );
+
+          stopBtn.disabled = true;
+          scanBtn.disabled = false;
+        }
+
+        scanBtn.addEventListener("click", scanSilence);
+        stopBtn.addEventListener("click", () => {
+          stopFlag = true;
+          stopBtn.disabled = true;
+        });
+
+        demoBtn.addEventListener("click", () => {
+          const dur = player.duration || 90;
+          // simple demo segments
+          segments = [
+            { start: 3, end: 12, label: "Highlight 1", note: "오프닝 훅 구간" },
+            { start: 18, end: 26, label: "Highlight 2", note: "임팩트 한방" },
+            {
+              start: 40,
+              end: 58,
+              label: "Highlight 3",
+              note: "핵심 전개 구간",
+            },
+            {
+              start: Math.max(0, dur - 18),
+              end: Math.max(0, dur - 3),
+              label: "Highlight 4",
+              note: "엔딩/결론 구간",
+            },
+          ].filter((s) => s.end > s.start);
+          renderSegments();
+          setStatus("데모 구간 생성됨", "ok");
+        });
+
+        // Play all segments sequentially
+        async function playSegments(list) {
+          if (!segments.length) return;
+          setStatus("구간 이어보기", "neutral");
+          for (const seg of list) {
+            if (stopFlag) break;
+            player.currentTime = seg.start;
+            await player.play().catch(() => {});
+            await new Promise((resolve) => {
+              const onTime = () => {
+                if (player.currentTime >= seg.end - 0.05) {
+                  player.pause();
+                  player.removeEventListener("timeupdate", onTime);
+                  resolve();
+                }
+              };
+              player.addEventListener("timeupdate", onTime);
+            });
+            // tiny gap
+            await new Promise((r) => setTimeout(r, 150));
+          }
+          setStatus("준비됨", "ok");
+          setTimeout(() => setStatus("준비됨", "neutral"), 800);
+        }
+
+        playAllBtn.addEventListener("click", async () => {
+          stopFlag = false;
+          await playSegments(segments);
+        });
+
+        shuffleBtn.addEventListener("click", async () => {
+          stopFlag = false;
+          const shuffled = [...segments].sort(() => Math.random() - 0.5);
+          await playSegments(shuffled);
+        });
+
+        function timestampsText() {
+          if (!segments.length) return "";
+          const lines = segments.map(
+            (s, i) =>
+              `${i + 1}. ${fmtTime(s.start)} - ${fmtTime(s.end)}  (${(
+                s.end - s.start
+              ).toFixed(2)}s)`
+          );
+          return [
+            "AutoCut Highlights",
+            `Count: ${segments.length}`,
+            "",
+            ...lines,
+            "",
+            "Tip: Use these timestamps for jump cuts / shorts selection.",
+          ].join("\n");
+        }
+
+        copyBtn.addEventListener("click", async () => {
+          if (!segments.length) return;
+          await navigator.clipboard.writeText(timestampsText());
+          setStatus("타임스탬프 복사됨", "ok");
+          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+        });
+
+        exportBtn.addEventListener("click", () => {
+          if (!segments.length) return;
+          const edl = [
+            "TITLE: AutoCut Studio EDL",
+            "FCM: NON-DROP FRAME",
+            "",
+            ...segments.map((s, i) => {
+              // This is a simple “comment EDL” style, not full SMPTE—good enough for reference.
+              return `${String(i + 1).padStart(
+                3,
+                "0"
+              )}  AX       V     C        ${fmtTime(s.start)} ${fmtTime(
+                s.end
+              )} ${fmtTime(s.start)} ${fmtTime(s.end)}\n* ${s.label}`;
+            }),
+          ].join("\n");
+
+          const blob = new Blob([edl], { type: "text/plain;charset=utf-8" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "autocut.edl.txt";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          setStatus("EDL 다운로드됨", "ok");
+          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+        });
+
+        // Transcript -> simple “offline” summary/title/tags (heuristic)
+        function splitSentences(text) {
+          return text
+            .replace(/\s+/g, " ")
+            .split(/(?<=[\.\?\!]|다\.|요\.|니다\.)\s+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
+        }
+
+        function extractKeywords(text, topN = 8) {
+          // super simple: count Korean/English words length>=2, remove common fillers
+          const stop = new Set([
+            "그리고",
+            "그래서",
+            "근데",
+            "그러면",
+            "이제",
+            "진짜",
+            "약간",
+            "그냥",
+            "너무",
+            "완전",
+            "오늘",
+            "저는",
+            "제가",
+            "우리는",
+            "여러분",
+            "because",
+            "and",
+            "the",
+            "with",
+            "that",
+            "this",
+            "you",
+            "your",
+            "are",
+            "but",
+            "for",
+            "from",
+          ]);
+          const words = (
+            text.toLowerCase().match(/[가-힣a-z0-9]{2,}/g) || []
+          ).filter((w) => !stop.has(w));
+          const freq = new Map();
+          for (const w of words) freq.set(w, (freq.get(w) || 0) + 1);
+          return [...freq.entries()]
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, topN)
+            .map((x) => x[0]);
+        }
+
+        summarizeBtn.addEventListener("click", () => {
+          const t = transcriptEl.value.trim();
+          if (!t) {
+            setStatus("텍스트를 붙여넣으면 더 잘 나와", "warn");
+            return;
+          }
+          const sents = splitSentences(t);
+          const kws = extractKeywords(t, 10);
+
+          // sentence scoring by keyword hits
+          const scored = sents
+            .map((s) => {
+              let score = 0;
+              for (const k of kws) if (s.toLowerCase().includes(k)) score += 2;
+              score += Math.min(2, s.length / 80);
+              return { s, score };
+            })
+            .sort((a, b) => b.score - a.score);
+
+          const summary = scored
+            .slice(0, 3)
+            .map((x) => x.s)
+            .join(" ");
+          const title =
+            kws
+              .slice(0, 3)
+              .map((k) => k.replace(/^\d+$/, ""))
+              .filter(Boolean)
+              .join(" ") || "요점 정리";
+          const tags = kws
+            .slice(0, 8)
+            .map((k) => `#${k.replace(/[^가-힣a-z0-9]/g, "")}`)
+            .join(" ");
+
+          titleOut.textContent = `${title} | 하이라이트 요약`;
+          summaryOut.textContent = summary || sents[0] || t.slice(0, 120);
+          tagsOut.textContent = tags || "#shorts #highlight #autocut";
+
+          summaryBox.classList.remove("hidden");
+          setStatus("생성 완료", "ok");
+          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+        });
+
+        clearTextBtn.addEventListener("click", () => {
+          transcriptEl.value = "";
+          summaryBox.classList.add("hidden");
+          setStatus("텍스트 삭제", "neutral");
+        });
+
+        copySummaryBtn.addEventListener("click", async () => {
+          const payload = [
+            titleOut.textContent,
+            "",
+            summaryOut.textContent,
+            "",
+            tagsOut.textContent,
+            "",
+            "---",
+            timestampsText(),
+          ].join("\n");
+          await navigator.clipboard.writeText(payload);
+          setStatus("요약+타임스탬프 복사됨", "ok");
+          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+        });
+
+        // Initial state
+        thresholdVal.textContent = Number(threshold.value).toFixed(3);
+        setStatus("대기중", "neutral");
+        renderSegments();
+        resetUI();
+      })();
+    </script>
+  </body>
+</html>
