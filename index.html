@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>AutoCut Studio — 영상 자동 하이라이트/점프컷 (가벼운 웹)</title>
+    <title data-i18n-title="metaTitle">AutoCut Studio — 영상 자동 하이라이트/점프컷 (가벼운 웹)</title>
 
     <!-- SEO / OG -->
     <meta
@@ -105,9 +105,51 @@
         text-align: center;
 }
   </style>
+  <style>
+    .lang-switch {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      display: inline-flex;
+      gap: 0;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(15, 23, 42, 0.95);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 1000;
+    }
+    .lang-switch button {
+      border: none;
+      background: transparent;
+      color: rgba(241, 245, 249, 0.7);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 7px 14px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 44px;
+      text-align: center;
+      letter-spacing: 0.02em;
+    }
+    .lang-switch button.active {
+      background: #22c55e;
+      color: #ffffff;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4);
+    }
+    .lang-switch button:not(.active):hover {
+      background: rgba(34, 197, 94, 0.2);
+      color: rgba(241, 245, 249, 0.9);
+    }
+  </style>
 </head>
 
-  <body class="min-h-screen bg-slate-950 text-slate-100"><div class="absolute inset-0 -z-10">
+  <body class="min-h-screen bg-slate-950 text-slate-100">
+    <div class="lang-switch" role="tablist" aria-label="Language switcher">
+      <button type="button" data-lang="ko" class="active">KR</button>
+      <button type="button" data-lang="en">EN</button>
+    </div><div class="absolute inset-0 -z-10">
       <div
         class="absolute -top-24 left-1/2 -translate-x-1/2 w-[900px] h-[900px] rounded-full blur-3xl opacity-30"
         style="
@@ -140,7 +182,7 @@
                 BETA
               </span>
             </div>
-            <div class="text-xs text-slate-300">
+            <div class="text-xs text-slate-300" data-i18n="headerSubtitle">
               업로드 → 침묵 감지 → 하이라이트 타임라인 자동 생성
             </div>
           </div>
@@ -153,7 +195,7 @@
           rel="noopener"
           class="shrink-0 inline-flex items-center gap-2 rounded-2xl px-4 py-2 glass hover:bg-white/10 transition"
         >
-          <span class="text-sm font-semibold">다른 서비스 보기</span>
+          <span class="text-sm font-semibold" data-i18n="btnOtherServices">다른 서비스 보기</span>
           <span class="opacity-80">↗</span>
         </a>
       </div>
@@ -164,16 +206,16 @@
       <section class="mt-6 glass rounded-3xl p-6">
         <div class="flex items-center justify-between gap-3 flex-wrap">
           <div>
-            <div class="text-sm text-emerald-200 font-semibold">
+            <div class="text-sm text-emerald-200 font-semibold" data-i18n="step1">
               Step 1. 영상 올리기
             </div>
-            <h2 class="text-xl font-bold">파일 드래그 or 선택 후 스캔</h2>
+            <h2 class="text-xl font-bold" data-i18n="step1Title">파일 드래그 or 선택 후 스캔</h2>
           </div>
           <span
             id="statusBadge"
             class="text-xs px-3 py-1 rounded-full bg-white/10 border border-white/10 text-slate-200"
           >
-            대기중
+            <span data-i18n="statusWaiting">대기중</span>
           </span>
         </div>
 
@@ -185,10 +227,10 @@
             >
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <div class="text-sm font-semibold">
+                  <div class="text-sm font-semibold" data-i18n="dropZoneTitle">
                     파일을 드래그하거나 선택하세요
                   </div>
-                  <div class="text-xs text-slate-400">
+                  <div class="text-xs text-slate-400" data-i18n="dropZoneDesc">
                     mp4, webm 등 영상 파일을 올려주세요.
                   </div>
                 </div>
@@ -196,6 +238,7 @@
                   id="fileSelectBtn"
                   type="button"
                   class="px-3 py-2 rounded-xl bg-white/10 border border-white/10 hover:bg-white/15 text-sm font-semibold shrink-0"
+                  data-i18n="btnSelectFile"
                 >
                   파일 선택
                 </button>
@@ -207,7 +250,7 @@
                 class="sr-only"
               />
             </div>
-            <div id="fileMeta" class="text-xs text-slate-400">
+            <div id="fileMeta" class="text-xs text-slate-400" data-i18n="fileMetaEmpty">
               아직 선택된 파일이 없어요.
             </div>
 
@@ -216,18 +259,20 @@
                 id="scanBtn"
                 class="px-4 py-3 rounded-2xl bg-emerald-500/20 border border-emerald-400/30 hover:bg-emerald-500/25 transition font-semibold"
               >
-                🔍 스캔 시작
+                <span data-i18n="btnScan">🔍 스캔 시작</span>
               </button>
               <button
                 id="stopBtn"
                 disabled
                 class="px-4 py-3 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold disabled:opacity-40"
+                data-i18n="btnStop"
               >
                 ⛔ 중지
               </button>
               <button
                 id="demoBtn"
                 class="px-4 py-3 rounded-2xl bg-white/10 border border-white/10 hover:bg-white/15 transition font-semibold"
+                data-i18n="btnDemo"
               >
                 🎲 데모 구간 생성
               </button>
@@ -532,6 +577,153 @@
     </main>
 
     <script>
+      // =========================
+      // i18n
+      // =========================
+      const translations = {
+        ko: {
+          metaTitle: "AutoCut Studio — 영상 자동 하이라이트/점프컷 (가벼운 웹)",
+          headerSubtitle: "업로드 → 침묵 감지 → 하이라이트 타임라인 자동 생성",
+          btnOtherServices: "다른 서비스 보기",
+          step1: "Step 1. 영상 올리기",
+          step1Title: "파일 드래그 or 선택 후 스캔",
+          statusWaiting: "대기중",
+          dropZoneTitle: "파일을 드래그하거나 선택하세요",
+          dropZoneDesc: "mp4, webm 등 영상 파일을 올려주세요.",
+          btnSelectFile: "파일 선택",
+          fileMetaEmpty: "아직 선택된 파일이 없어요.",
+          btnScan: "🔍 스캔 시작",
+          btnStop: "⛔ 중지",
+          btnDemo: "🎲 데모 구간 생성",
+          statusVideoOnly: "영상 파일만 올려줘",
+          statusLoaded: "영상 로드됨",
+          statusReady: "준비됨",
+          statusTextNeeded: "텍스트를 붙여넣으면 더 잘 나와",
+          statusGenerated: "생성 완료",
+          statusTextCleared: "텍스트 삭제",
+          statusCopied: "요약+타임스탬프 복사됨",
+          segmentsEmpty: "아직 구간이 없어요. 업로드 후 스캔을 눌러보세요.",
+          segmentsCount: "{count}개",
+        },
+        en: {
+          metaTitle: "AutoCut Studio — Auto Highlight/Jump Cut (Lightweight Web)",
+          headerSubtitle: "Upload → Silence Detection → Auto Highlight Timeline",
+          btnOtherServices: "View Other Services",
+          step1: "Step 1. Upload Video",
+          step1Title: "Drag file or select and scan",
+          statusWaiting: "Waiting",
+          dropZoneTitle: "Drag file or select",
+          dropZoneDesc: "Please upload video files like mp4, webm, etc.",
+          btnSelectFile: "Select File",
+          fileMetaEmpty: "No file selected yet.",
+          btnScan: "🔍 Start Scan",
+          btnStop: "⛔ Stop",
+          btnDemo: "🎲 Generate Demo Segments",
+          statusVideoOnly: "Please upload video files only",
+          statusLoaded: "Video loaded",
+          statusReady: "Ready",
+          statusTextNeeded: "Paste text for better results",
+          statusGenerated: "Generated",
+          statusTextCleared: "Text cleared",
+          statusCopied: "Summary+timestamps copied",
+          segmentsEmpty: "No segments yet. Upload and click Scan.",
+          segmentsCount: "{count}",
+        },
+      };
+
+      const defaultLang = "ko";
+      const supportedLangs = ["ko", "en"];
+      let currentLang = defaultLang;
+
+      function t(key, vars = {}) {
+        const langTable = translations[currentLang] || translations.ko;
+        let template = langTable?.[key] ?? translations.ko?.[key] ?? key;
+        if (typeof template !== "string") return template;
+        Object.keys(vars).forEach((k) => {
+          template = template.replace(new RegExp(`\\{${k}\\}`, "g"), vars[k]);
+        });
+        return template;
+      }
+
+      function applyTranslations() {
+        document.title = t("metaTitle");
+        document.documentElement.lang = currentLang;
+        document.querySelectorAll("[data-i18n]").forEach((el) => {
+          el.textContent = t(el.dataset.i18n);
+        });
+        document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+          el.innerHTML = t(el.dataset.i18nHtml);
+        });
+        document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+          if (el.tagName === "TITLE") {
+            el.textContent = t(el.dataset.i18nTitle);
+          } else {
+            el.title = t(el.dataset.i18nTitle);
+          }
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+          el.placeholder = t(el.dataset.i18nPlaceholder);
+        });
+        document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+          el.setAttribute("aria-label", t(el.dataset.i18nAria));
+        });
+        document.querySelectorAll("[data-i18n-alt]").forEach((el) => {
+          el.setAttribute("alt", t(el.dataset.i18nAlt));
+        });
+      }
+
+      function detectLang() {
+        const params = new URLSearchParams(window.location.search);
+        const paramLang = params.get("lang");
+        if (supportedLangs.includes(paramLang)) return paramLang;
+        const stored = localStorage.getItem("preferredLang");
+        if (supportedLangs.includes(stored)) return stored;
+        const intlLocale =
+          typeof Intl === "object" && typeof Intl.DateTimeFormat === "function"
+            ? Intl.DateTimeFormat().resolvedOptions().locale
+            : "";
+        const sources = [
+          ...(navigator.languages || []),
+          navigator.language,
+          navigator.userLanguage,
+          intlLocale,
+        ]
+          .filter(Boolean)
+          .map((locale) => locale.toLowerCase());
+        const hasKorean = sources.some((locale) => locale.startsWith("ko"));
+        return hasKorean ? "ko" : "en";
+      }
+
+      function setLang(lang, options = {}) {
+        const nextLang = supportedLangs.includes(lang) ? lang : defaultLang;
+        currentLang = nextLang;
+        window.currentLang = currentLang;
+        document.documentElement.lang = nextLang;
+        localStorage.setItem("preferredLang", nextLang);
+        document.querySelectorAll(".lang-switch button").forEach((button) => {
+          button.classList.toggle("active", button.dataset.lang === nextLang);
+        });
+        applyTranslations();
+        if (options.updateUrl) {
+          const url = new URL(window.location.href);
+          url.searchParams.set("lang", nextLang);
+          window.history.replaceState({}, "", url);
+        }
+      }
+
+      document.querySelectorAll(".lang-switch button").forEach((button) => {
+        button.addEventListener("click", () => {
+          setLang(button.dataset.lang, { updateUrl: true });
+        });
+      });
+
+      setLang(detectLang(), { updateUrl: false });
+
+      // Make t() function and currentLang globally available
+      window.t = t;
+      window.currentLang = currentLang;
+      window.setLang = setLang;
+
       (() => {
         const $ = (id) => document.getElementById(id);
 
@@ -636,8 +828,9 @@
 
         function handleFile(file) {
           if (!file) return;
+          const t = window.t || ((key, vars = {}) => key);
           if (file.type && !file.type.startsWith("video/")) {
-            setStatus("영상 파일만 올려줘", "warn");
+            setStatus(t("statusVideoOnly"), "warn");
             return;
           }
 
@@ -653,10 +846,11 @@
           video.src = objectUrl;
           player.src = objectUrl;
 
+          const t = window.t || ((key, vars = {}) => key);
           segments = [];
           renderSegments();
           resetUI();
-          setStatus("영상 로드됨", "ok");
+          setStatus(t("statusLoaded"), "ok");
 
           fileMeta.textContent = `${file.name} · ${(
             file.size /
@@ -666,11 +860,12 @@
         }
 
         function renderSegments() {
-          segCount.textContent = `${segments.length}개`;
+          const t = window.t || ((key, vars = {}) => key);
+          segCount.textContent = t("segmentsCount", { count: segments.length });
           if (!segments.length) {
             segmentsEl.innerHTML = `
         <div class="rounded-2xl bg-white/5 border border-white/10 p-4 text-sm text-slate-300">
-          아직 구간이 없어요. 업로드 후 <span class="font-semibold text-slate-100">스캔</span>을 눌러보세요.
+          ${t("segmentsEmpty")}
         </div>`;
             playAllBtn.disabled = true;
             shuffleBtn.disabled = true;
@@ -1176,13 +1371,14 @@
         }
 
         summarizeBtn.addEventListener("click", () => {
-          const t = transcriptEl.value.trim();
-          if (!t) {
-            setStatus("텍스트를 붙여넣으면 더 잘 나와", "warn");
+          const t = window.t || ((key, vars = {}) => key);
+          const text = transcriptEl.value.trim();
+          if (!text) {
+            setStatus(t("statusTextNeeded"), "warn");
             return;
           }
-          const sents = splitSentences(t);
-          const kws = extractKeywords(t, 10);
+          const sents = splitSentences(text);
+          const kws = extractKeywords(text, 10);
 
           // sentence scoring by keyword hits
           const scored = sents
@@ -1209,22 +1405,25 @@
             .map((k) => `#${k.replace(/[^가-힣a-z0-9]/g, "")}`)
             .join(" ");
 
+          const t = window.t || ((key, vars = {}) => key);
           titleOut.textContent = `${title} | 하이라이트 요약`;
-          summaryOut.textContent = summary || sents[0] || t.slice(0, 120);
+          summaryOut.textContent = summary || sents[0] || text.slice(0, 120);
           tagsOut.textContent = tags || "#shorts #highlight #autocut";
 
           summaryBox.classList.remove("hidden");
-          setStatus("생성 완료", "ok");
-          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+          setStatus(t("statusGenerated"), "ok");
+          setTimeout(() => setStatus(t("statusReady"), "neutral"), 900);
         });
 
         clearTextBtn.addEventListener("click", () => {
+          const t = window.t || ((key, vars = {}) => key);
           transcriptEl.value = "";
           summaryBox.classList.add("hidden");
-          setStatus("텍스트 삭제", "neutral");
+          setStatus(t("statusTextCleared"), "neutral");
         });
 
         copySummaryBtn.addEventListener("click", async () => {
+          const t = window.t || ((key, vars = {}) => key);
           const payload = [
             titleOut.textContent,
             "",
@@ -1236,13 +1435,14 @@
             timestampsText(),
           ].join("\n");
           await navigator.clipboard.writeText(payload);
-          setStatus("요약+타임스탬프 복사됨", "ok");
-          setTimeout(() => setStatus("준비됨", "neutral"), 900);
+          setStatus(t("statusCopied"), "ok");
+          setTimeout(() => setStatus(t("statusReady"), "neutral"), 900);
         });
 
         // Initial state
         thresholdVal.textContent = Number(threshold.value).toFixed(3);
-        setStatus("대기중", "neutral");
+        const t = window.t || ((key, vars = {}) => key);
+        setStatus(t("statusWaiting"), "neutral");
         renderSegments();
         resetUI();
       })();
